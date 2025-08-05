@@ -13,9 +13,9 @@ export TARGET=$ARCH-linux-android
 export WINEARCH=$WINARCH
 export PATH=$LLVM_MINGW_TOOLCHAIN:$PATH
 
-export CC="$TOOLCHAIN/clang --target=$TARGET$API"
+export CC="/home/runner/work/wine/wine/clang-wrapper.sh --target=$TARGET$API"
 export AS=$CC
-export CXX="$TOOLCHAIN/clang++ --target=$TARGET$API"
+export CXX="/home/runner/work/wine/wine/clang++-wrapper.sh --target=$TARGET$API"
 export AR=$TOOLCHAIN/llvm-ar
 export LD=$TOOLCHAIN/ld
 export RANLIB=$TOOLCHAIN/llvm-ranlib
@@ -46,7 +46,7 @@ do
 	if [ "$arg" == "--configure" ]
 	then
             echo -e "Configuring"
-            ../configure --with-wine-tools=../wine-tools --host $TARGET --with-mingw=clang --without-ldap --without-oss --disable-win16 --disable-tests --with-pulse --with-ffmpeg --with-gstreamer --with-pthread --without-dbus --with-freetype --enable-wineandroid_drv=no --without-cups --without-v4l2 --enable-nls --disable-tests --without-capi --without-coreaudio --without-gettext --with-gettextpo=no --without-gphoto --without-inotify --without-netapi --without-opencl --without-oss --without-pcap --without-sane --without-udev --without-unwind --without-usb --without-xfixes --without-xcomposite --without-xcursor --without-xinerama --without-xinput --without-xinput2 --without-xrandr --without-xrender --without-xshape --without-xshm --without-xxf86vm --enable-archs=$WINEARCH --without-wayland --without-pcsclite --prefix $install_dir --bindir $install_dir/bin --libdir $install_dir/lib --exec-prefix $install_dir || exit
+            ../configure --with-wine-tools=../wine-tools --host $TARGET --with-mingw=clang --without-ldap --without-oss --disable-win16 --disable-tests --with-pulse --with-ffmpeg --with-gstreamer --with-pthread --without-dbus --with-freetype --enable-wineandroid_drv=no --without-cups --without-v4l2 --enable-nls --disable-tests --without-capi --without-coreaudio --without-gettext --with-gettextpo=no --without-gphoto --without-inotify --without-netapi --without-opencl --without-oss --without-pcap --without-sane --without-udev --without-unwind --without-usb --without-xfixes --without-xcomposite --with-xcursor --without-xinerama --without-xinput --without-xinput2 --without-xrandr --without-xrender --without-xshape --without-xshm --without-xxf86vm --enable-archs=$WINEARCH --without-wayland --without-pcsclite --prefix $install_dir --bindir $install_dir/bin --libdir $install_dir/lib --exec-prefix $install_dir || exit
     fi
 	if [ "$arg" == "--build" ]
         then
