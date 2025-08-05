@@ -123,6 +123,7 @@ jobs:
             
     - name: prepare imagefs
       run: |
+        pwd
         mkdir imagefs
         cd imagefs
         pwd
