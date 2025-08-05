@@ -175,6 +175,7 @@ jobs:
        mkdir build
        cd build
        mv ../build.sh ./
+       chmod a+x ./build.sh
        DEPS=/data/data/com.termux/files/usr ARCH="x86_64" WINARCH="x86_64,i386" ./build.sh --configure
        DEPS=/data/data/com.termux/files/usr ARCH="x86_64" WINARCH="x86_64,i386" ./build.sh --build
        DEPS=/data/data/com.termux/files/usr ARCH="x86_64" WINARCH="x86_64,i386" ./build.sh --compress
