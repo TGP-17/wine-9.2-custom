@@ -169,7 +169,6 @@ jobs:
        
     - name: compile wine
       run: |
-       mkdir build
        cd build
        mv ../build.sh ./
        chmod a+x ./build.sh
