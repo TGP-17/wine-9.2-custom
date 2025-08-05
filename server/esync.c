@@ -63,6 +63,11 @@ static int shm_fd;
 static size_t pagesize;
 static size_t shm_size;
 
+static void **shm_addrs;
+static int shm_addrs_size;
+
+static void shm_cleanup(void);
+
 void esync_init(void)
 {
     struct stat st;
