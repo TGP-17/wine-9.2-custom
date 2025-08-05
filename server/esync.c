@@ -77,7 +77,7 @@ void esync_init(void)
     else
         sprintf(shm_name, "/wine-%lx-esync", (unsigned long)st.st_ino);
 
-    snprintf(shm_path, sizeof(shm_path), "/data/data/com.termux/files/usr/tmp/%s", shm_name + 1);
+    snprintf(shm_path, sizeof(shm_path), "/data/data/com.winlator.cmod/files/tmp/%s", shm_name + 1);
 
     unlink(shm_path);
 
