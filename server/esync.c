@@ -62,45 +62,51 @@ static off_t shm_size;
 static void **shm_addrs;
 static int shm_addrs_size;  /* length of the allocated shm_addrs array */
 static long pagesize;
+static char shm_name[128];  // Mutable global buffer
 
 static void shm_cleanup(void)
-const char *shm_name = "/data/data/com.winlator.cmod/files/tmp";
 {
-    close( shm_fd );
-    if (unlink( shm_name ) == -1)
-        perror( "unlink" );
+    close(shm_fd);
+    if (unlink(shm_name) == -1)
+        perror("unlink");
 }
 
 void esync_init(void)
 {
     struct stat st;
 
-    if (fstat( config_dir_fd, &st ) == -1)
-        fatal_error( "cannot stat config dir\n" );
+    if (fstat(config_dir_fd, &st) == -1)
+        fatal_error("cannot stat config dir\n");
 
-    if (st.st_ino != (unsigned long)st.st_ino)
-        sprintf( shm_name, "/wine-%lx%08lx-esync", (unsigned long)((unsigned long long)st.st_ino >> 32), (unsigned long)st.st_ino );
+    // Generate a unique shared memory name based on inode number
+    if (((unsigned long long)st.st_ino) >> 32)
+        snprintf(shm_name, sizeof(shm_name),
+                 "/data/data/com.winlator.cmod/files/wine-%lx%08lx-esync",
+                 (unsigned long)((unsigned long long)st.st_ino >> 32),
+                 (unsigned long)st.st_ino);
     else
-        sprintf( shm_name, "/wine-%lx-esync", (unsigned long)st.st_ino );
+        snprintf(shm_name, sizeof(shm_name),
+                 "/data/data/com.winlator.cmod/files/wine-%lx-esync",
+                 (unsigned long)st.st_ino);
 
-    unlink( shm_name );
+    unlink(shm_name);
 
-    shm_fd = open( shm_name, O_RDWR | O_CREAT | O_EXCL, 0644 );
+    shm_fd = open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0644);
     if (shm_fd == -1)
-        perror( "open" );
+        perror("open");
 
-    pagesize = sysconf( _SC_PAGESIZE );
+    pagesize = sysconf(_SC_PAGESIZE);
 
-    shm_addrs = calloc( 128, sizeof(shm_addrs[0]) );
+    shm_addrs = calloc(128, sizeof(shm_addrs[0]));
     shm_addrs_size = 128;
 
     shm_size = pagesize;
-    if (ftruncate( shm_fd, shm_size ) == -1)
-        perror( "ftruncate" );
+    if (ftruncate(shm_fd, shm_size) == -1)
+        perror("ftruncate");
 
-    fprintf( stderr, "esync: up and running.\n" );
+    fprintf(stderr, "esync: up and running.\n");
 
-    atexit( shm_cleanup );
+    atexit(shm_cleanup);
 }
 
 static struct list mutex_list = LIST_INIT(mutex_list);
