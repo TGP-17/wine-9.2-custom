@@ -141,9 +141,6 @@ jobs:
        sudo mv llvm-mingw-20250305-ucrt-ubuntu-20.04-x86_64 /opt/llvm-mingw
        cd /opt/llvm-mingw
        sudo chown -R $(whoami):$(whoami) .
-       
-    - name: run autogen.sh
-      run: ./autogen.sh
       
     - name: Compile native wine-tools
       run: |
