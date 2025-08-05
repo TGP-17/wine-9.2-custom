@@ -13,9 +13,9 @@ export TARGET=$ARCH-linux-android
 export WINEARCH=$WINARCH
 export PATH=$LLVM_MINGW_TOOLCHAIN:$PATH
 
-export CC="/home/runner/work/wine/wine/clang-wrapper.sh --target=$TARGET$API"
+export CC="/home/runner/work/wine-9.2-custom/wine-9.2-custom/clang-wrapper.sh --target=$TARGET$API"
 export AS=$CC
-export CXX="/home/runner/work/wine/wine/clang++-wrapper.sh --target=$TARGET$API"
+export CXX="/home/runner/work/wine-9.2-custom/wine-9.2-custom/clang++-wrapper.sh --target=$TARGET$API"
 export AR=$TOOLCHAIN/llvm-ar
 export LD=$TOOLCHAIN/ld
 export RANLIB=$TOOLCHAIN/llvm-ranlib
