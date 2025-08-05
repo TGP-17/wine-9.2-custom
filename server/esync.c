@@ -65,36 +65,38 @@ static int shm_addrs_size;  /* length of the allocated shm_addrs array */
 static long pagesize;
 
 static void shm_cleanup(void)
-char shm_path[PATH_MAX];
-
 {
-    close( shm_fd );
-    if (unlink( shm_path ) == -1)
-        perror( "unlink" );
+    char shm_path[PATH_MAX];
+    snprintf(shm_path, sizeof(shm_path), "/data/data/com.winlator.cmod/files/tmp%s", shm_name);
+    close(shm_fd);
+    if (unlink(shm_path) == -1)
+        perror("unlink");
 }
 
 void esync_init(void)
 {
     struct stat st;
+    char shm_path[PATH_MAX];
 
-    if (fstat( config_dir_fd, &st ) == -1)
-        fatal_error( "cannot stat config dir\n" );
+    if (fstat(config_dir_fd, &st) == -1)
+        fatal_error("cannot stat config dir\n");
 
     if (st.st_ino != (unsigned long)st.st_ino)
-        sprintf( shm_name, "/wine-%lx%08lx-esync", (unsigned long)((unsigned long long)st.st_ino >> 32), (unsigned long)st.st_ino );
+        sprintf(shm_name, "/wine-%lx%08lx-esync",
+                (unsigned long)((unsigned long long)st.st_ino >> 32),
+                (unsigned long)st.st_ino);
     else
-        sprintf( shm_name, "/wine-%lx-esync", (unsigned long)st.st_ino );
+        sprintf(shm_name, "/wine-%lx-esync", (unsigned long)st.st_ino);
 
     snprintf(shm_path, sizeof(shm_path), "/data/data/com.winlator.cmod/files/tmp%s", shm_name);
+    unlink(shm_path);
 
-    unlink( shm_path );
-
-    shm_fd = open( shm_path, O_RDWR | O_CREAT | O_EXCL, 0644 );
+    shm_fd = open(shm_path, O_RDWR | O_CREAT | O_EXCL, 0644);
     if (shm_fd == -1)
-        perror( "open" );
-}
+        perror("open");
 
-    pagesize = sysconf( _SC_PAGESIZE );
+    pagesize = sysconf(_SC_PAGESIZE);
+}
 
     shm_addrs = calloc( 128, sizeof(shm_addrs[0]) );
     shm_addrs_size = 128;
