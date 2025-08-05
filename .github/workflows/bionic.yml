@@ -169,6 +169,8 @@ jobs:
        
     - name: compile wine
       run: |
+       chmod a+x ./clang-wrapper.sh
+       chmod a+x ./clang++-wrapper.sh
        cd build
        mv ../build.sh ./
        chmod a+x ./build.sh
