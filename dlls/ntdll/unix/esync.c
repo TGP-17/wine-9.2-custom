@@ -1303,7 +1303,10 @@ void esync_init(void)
     else
         sprintf( shm_name, "/wine-%lx-esync", (unsigned long)st.st_ino );
 
-    if ((shm_fd = shm_open( shm_name, O_RDWR, 0644 )) == -1)
+    char shm_path[PATH_MAX];
+    snprintf(shm_path, sizeof(shm_path), "/data/data/com.winlator.cmod/files/tmp%s", shm_name);
+    if ((shm_fd = open( shm_path, O_RDWR | O_CREAT, 0644 )) == -1)
+        
     {
         /* probably the server isn't running with WINEESYNC, tell the user and bail */
         if (errno == ENOENT)
