@@ -1,0 +1,190 @@
+name: Bionic
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: install dependencies
+      run: |
+       sudo dpkg --add-architecture i386
+       sudo apt update
+       sudo apt install -y \
+       debhelper-compat=13 \
+       gcc-mingw-w64 \
+       libz-mingw-w64-dev \
+       lzma \
+       flex \
+       bison \
+       quilt \
+       unzip \
+       gettext \
+       icoutils \
+       sharutils \
+       pkg-config \
+       dctrl-tools \
+       imagemagick \
+       librsvg2-bin \
+       fontforge-nox \
+       khronos-api \
+       unicode-data \
+       unicode-idna \
+       libgl-dev \
+       libxi-dev \
+       libxt-dev \
+       libxmu-dev \
+       libx11-dev \
+       libxi-dev \
+       libxinerama-dev \
+       libxcursor-dev \
+       libxext-dev \
+       libxfixes-dev \
+       libxrandr-dev \
+       libxcursor-dev \
+       libxrender-dev \
+       libxkbfile-dev \
+       libxxf86vm-dev \
+       libxxf86dga-dev \
+       libxinerama-dev \
+       libglu1-mesa-dev \
+       libxcomposite-dev \
+       libxkbregistry-dev \
+       libxml-libxml-perl \
+       libssl-dev \
+       libv4l-dev \
+       libsdl2-dev \
+       libkrb5-dev \
+       libudev-dev \
+       libpulse-dev \
+       libldap2-dev \
+       unixodbc-dev \
+       libcups2-dev \
+       libcapi20-dev \
+       libvulkan-dev \
+       libvulkan-dev:i386 \
+       libopenal-dev \
+       libdbus-1-dev \
+       freeglut3-dev \
+       libunwind-dev \
+       libpcap0.8-dev \
+       libasound2-dev \
+       libgphoto2-dev \
+       libosmesa6-dev \
+       libncurses-dev \
+       libwayland-dev \
+       libfreetype-dev \
+       libgnutls28-dev \
+       libpcsclite-dev \
+       libusb-1.0-0-dev \
+       libgettextpo-dev \
+       libfontconfig-dev \
+       ocl-icd-opencl-dev \
+       libgstreamer-plugins-base1.0-dev \
+       libdrm2 \
+       libdrm-dev \
+       libdrm2:i386 \
+       libdrm-dev:i386
+
+       sudo apt-get install -y \
+       build-essential \
+       gcc-multilib \
+       libx11-dev:i386 \
+       libfreetype6-dev:i386 \
+       libxcursor-dev:i386 \
+       libxi-dev:i386 \
+       libxshmfence-dev:i386 \
+       libxxf86vm-dev:i386 \
+       libxrandr-dev:i386 \
+       libxinerama-dev:i386 \
+       libxcomposite-dev:i386 \
+       libglu1-mesa-dev:i386 \
+       libosmesa6-dev:i386 \
+       libdbus-1-dev:i386 \
+       libncurses5-dev:i386 \
+       libsane-dev:i386 \
+       libv4l-dev:i386 \
+       libgphoto2-dev:i386 \
+       liblcms2-dev:i386 \
+       libcapi20-dev:i386 \
+       libcups2-dev:i386 \
+       libfontconfig1-dev:i386 \
+       libgsm1-dev:i386 \
+       libtiff5-dev:i386 \
+       libmpg123-dev:i386 \
+       libopenal-dev:i386 \
+       libldap2-dev:i386 \
+       libjpeg-dev:i386
+            
+    - name: prepare imagefs
+      run: |
+        mkdir imagefs
+        cd imagefs
+        pwd
+        wget https://github.com/TGP-17/termux-on-gha/releases/download/test/termuxfs.tar
+        tar xf termuxfs.tar
+        rm -rf termuxfs.tar
+        sudo mv ./data /
+        sudo ls -R /data/data/com.termux
+        cd /data
+        sudo chown -R $(whoami):$(whoami) .
+        
+    - name: install Toolchain
+      run: |
+       wget https://github.com/bylaws/llvm-mingw/releases/download/20250305/llvm-mingw-20250305-ucrt-ubuntu-20.04-x86_64.tar.xz
+       tar -xf llvm-mingw-20250305-ucrt-ubuntu-20.04-x86_64.tar.xz
+       sudo mv llvm-mingw-20250305-ucrt-ubuntu-20.04-x86_64 /opt/llvm-mingw
+       cd /opt/llvm-mingw
+       sudo chown -R $(whoami):$(whoami) .
+       
+    - name: run autogen.sh
+      run: ./autogen.sh
+      
+    - name: Compile native wine-tools
+      run: |
+       unset ANDROID_HOME
+       unset ANDROID_SDK_ROOT
+       unset ANDROID_NDK
+       unset ANDROID_NDK_HOME
+       unset ANDROID_NDK_ROOT
+       unset ANDROID_NDK_LATEST_HOME
+       mkdir build
+       cd build
+       mv ../build-wine-tools.sh ./
+       chmod a+x build-wine-tools.sh
+       ./build-wine-tools.sh
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Setup NDK
+      uses: nttld/setup-ndk@v1
+      id: ndk
+      with:
+       ndk-version: r27c
+       add-to-path: false
+       link-to-sdk: true
+       
+    - name: compile wine
+      run: |
+       mkdir build
+       cd build
+       mv ../build.sh ./
+       DEPS=/data/data/com.termux/files/usr ARCH="x86_64" WINARCH="x86_64,i386" ./build.sh --configure
+       DEPS=/data/data/com.termux/files/usr ARCH="x86_64" WINARCH="x86_64,i386" ./build.sh --build
+       DEPS=/data/data/com.termux/files/usr ARCH="x86_64" WINARCH="x86_64,i386" ./build.sh --compress
+
+    - name: ls /home/runner
+      run: ls /home/runner
+      
+    - name: Upload wine
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+       name: wine-build.tar.xz
+       path: /home/runner/wine-build.tar.xz
