@@ -23,6 +23,7 @@
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdarg.h>
 #ifdef HAVE_SYS_EVENTFD_H
 # include <sys/eventfd.h>
@@ -42,6 +43,32 @@
 #include "request.h"
 #include "file.h"
 #include "esync.h"
+#include "fsync.h"
+
+#ifdef __ANDROID__
+static int shm_open(const char *name, int oflag, mode_t mode) {
+	char *tmpdir;
+	char *fname;
+	
+	tmpdir = getenv("TMPDIR");
+	if (!tmpdir) {
+		tmpdir = "/tmp";
+	}
+	asprintf(&fname, "%s/%s", tmpdir, name);
+	return open(fname, oflag, mode);
+}
+static int shm_unlink(const char *name) {
+	char *tmpdir;
+	char *fname;
+	
+	tmpdir = getenv("TMPDIR");
+	if (!tmpdir) {
+		tmpdir = "/tmp";
+	}
+	asprintf(&fname, "%s/%s", tmpdir, name);
+	return unlink(fname);
+}
+#endif
 
 int do_esync(void)
 {
@@ -49,7 +76,7 @@ int do_esync(void)
     static int do_esync_cached = -1;
 
     if (do_esync_cached == -1)
-        do_esync_cached = getenv("WINEESYNC") && atoi(getenv("WINEESYNC"));
+        do_esync_cached = getenv("WINEESYNC") && atoi(getenv("WINEESYNC")) && !do_fsync();
 
     return do_esync_cached;
 #else
@@ -58,57 +85,49 @@ int do_esync(void)
 }
 
 static char shm_name[29];
-static char shm_path[256];
 static int shm_fd;
-static size_t pagesize;
-static size_t shm_size;
-
+static off_t shm_size;
 static void **shm_addrs;
-static int shm_addrs_size;
+static int shm_addrs_size;  /* length of the allocated shm_addrs array */
+static long pagesize;
 
-static void shm_cleanup(void);
+static void shm_cleanup(void)
+{
+    close( shm_fd );
+    if (shm_unlink( shm_name ) == -1)
+        perror( "shm_unlink" );
+}
 
 void esync_init(void)
 {
     struct stat st;
 
-    if (fstat(config_dir_fd, &st) == -1)
-        fatal_error("cannot stat config dir\n");
+    if (fstat( config_dir_fd, &st ) == -1)
+        fatal_error( "cannot stat config dir\n" );
 
     if (st.st_ino != (unsigned long)st.st_ino)
-        sprintf(shm_name, "/wine-%lx%08lx-esync",
-                (unsigned long)((unsigned long long)st.st_ino >> 32),
-                (unsigned long)st.st_ino);
+        sprintf( shm_name, "/wine-%lx%08lx-esync", (unsigned long)((unsigned long long)st.st_ino >> 32), (unsigned long)st.st_ino );
     else
-        sprintf(shm_name, "/wine-%lx-esync", (unsigned long)st.st_ino);
+        sprintf( shm_name, "/wine-%lx-esync", (unsigned long)st.st_ino );
 
-    snprintf(shm_path, sizeof(shm_path), "/data/data/com.winlator.cmod/files/tmp/%s", shm_name + 1);
+    shm_unlink( shm_name );
 
-    unlink(shm_path);
-
-    shm_fd = open(shm_path, O_RDWR | O_CREAT | O_EXCL, 0644);
+    shm_fd = shm_open( shm_name, O_RDWR | O_CREAT | O_EXCL, 0644 );
     if (shm_fd == -1)
-        perror("open");
+        perror( "shm_open" );
 
-    pagesize = sysconf(_SC_PAGESIZE);
+    pagesize = sysconf( _SC_PAGESIZE );
 
-    shm_addrs = calloc(128, sizeof(shm_addrs[0]));
+    shm_addrs = calloc( 128, sizeof(shm_addrs[0]) );
     shm_addrs_size = 128;
 
     shm_size = pagesize;
-    if (ftruncate(shm_fd, shm_size) == -1)
-        perror("ftruncate");
+    if (ftruncate( shm_fd, shm_size ) == -1)
+        perror( "ftruncate" );
 
-    fprintf(stderr, "esync: up and running.\n");
+    fprintf( stderr, "esync: up and running.\n" );
 
-    atexit(shm_cleanup);
-}
-
-static void shm_cleanup(void)
-{
-    close(shm_fd);
-    if (unlink(shm_path) == -1)
-        perror("unlink");
+    atexit( shm_cleanup );
 }
 
 static struct list mutex_list = LIST_INIT(mutex_list);
@@ -136,6 +155,7 @@ const struct object_ops esync_ops =
     NULL,                      /* remove_queue */
     NULL,                      /* signaled */
     esync_get_esync_fd,        /* get_esync_fd */
+    NULL,                      /* get_fsync_idx */
     NULL,                      /* satisfied */
     no_signal,                 /* signal */
     no_get_fd,                 /* get_fd */
